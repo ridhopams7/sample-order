@@ -11,6 +11,8 @@ exports.default = fastify_plugin_1.default((server, opts, next) => {
         try {
             // const login = server.decoded.username;
             const orderService = new order_service_1.OrderService(server.db);
+            const username = server.decoded.username;
+            console.log(username);
             orderService.inputOrder({ request: request.body })
                 .then(data => {
                 return reply.code(200).send({

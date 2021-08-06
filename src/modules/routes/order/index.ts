@@ -10,7 +10,8 @@ export default fp((server, opts, next) => {
         try {
             // const login = server.decoded.username;
             const orderService = new OrderService(server.db);
-
+            const username = server.decoded.username;
+            console.log(username)
 
             orderService.inputOrder({ request: request.body })
                 .then(data => {

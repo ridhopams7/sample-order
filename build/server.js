@@ -37,9 +37,12 @@ const fastify_blipp_1 = __importDefault(require("fastify-blipp"));
 const fastify_swagger_1 = __importDefault(require("fastify-swagger"));
 const fastify_autoload_1 = __importDefault(require("fastify-autoload"));
 const elastic_apm_node_1 = __importDefault(require("elastic-apm-node"));
+const config_1 = require("./config");
 const path = __importStar(require("path"));
 const dotenv = __importStar(require("dotenv"));
 const db_1 = __importDefault(require("./plugins/db"));
+const redis_1 = __importDefault(require("./plugins/redis"));
+const auth_1 = __importDefault(require("./plugins/auth"));
 dotenv.config({
     path: path.resolve(".env")
 });
@@ -51,6 +54,10 @@ const dbHost = process.env.DB_HOST;
 const dbPort = process.env.DB_PORT;
 const dbUsername = process.env.DB_USERNAME;
 const dbPassword = process.env.DB_PASSWORD;
+const secretKey = process.env.SECRET;
+const expireToken = process.env.EXPIRE_TOKEN;
+const redisPort = process.env.REDIS_PORT;
+const redistHost = process.env.REDIS_HOST;
 const apmUrl = process.env.APM_URL;
 var apm = elastic_apm_node_1.default.start({
     // Override service name from package.json
@@ -71,35 +78,12 @@ const createServer = () => new Promise((resolve, reject) => {
     //-------------------------------------------
     // register plugin below:
     server.register(fastify_blipp_1.default);
+    // decorators
+    server.decorate('conf', { port, secretKey, expireToken, redisPort, redistHost, apmUrl, dbDialect, db, dbHost, dbPort, dbUsername, dbPassword });
+    // apm
+    server.decorate('apm', elastic_apm_node_1.default);
     // swagger / open api
-    server.register(fastify_swagger_1.default, {
-        routePrefix: '/swagger',
-        swagger: {
-            info: {
-                title: 'API Documentation',
-                description: 'API Documentation',
-                version: '0.1.0'
-            },
-            securityDefinitions: {
-                APIKeyHeader: {
-                    type: 'apiKey',
-                    name: 'Authorization',
-                    description: "value: Bearer <Token>",
-                    in: 'header'
-                }
-            },
-            schemes: ['http', 'https'],
-            consumes: ['application/json'],
-            produces: ['application/json'],
-            security: [
-                {
-                    APIKeyHeader: []
-                }
-            ]
-        },
-        hideUntagged: true,
-        exposeRoute: true
-    });
+    server.register(fastify_swagger_1.default, config_1.swagger.options);
     // auto register all routes
     server.register(fastify_autoload_1.default, {
         dir: path.join(__dirname, "modules/routes")
@@ -109,12 +93,10 @@ const createServer = () => new Promise((resolve, reject) => {
             hello: 'world'
         };
     }));
-    // decorators
-    server.decorate('conf', { port, dbDialect, db, dbHost, dbPort, dbUsername, dbPassword });
-    // apm
-    server.decorate('apm', elastic_apm_node_1.default);
     // plugin 
     server.register(db_1.default);
+    server.register(redis_1.default);
+    server.register(auth_1.default);
     //-----------------------------------------------------
     server.addHook('onRequest', (request, reply, error) => __awaiter(void 0, void 0, void 0, function* () {
         apm.setTransactionName(request.method + ' ' + request.url);

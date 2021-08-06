@@ -5,10 +5,14 @@ import AutoLoad from "fastify-autoload";
 
 import apmServer from 'elastic-apm-node';
 
+import { swagger } from './config';
+
 import * as path from "path";
 import * as dotenv from "dotenv";
 
 import dbPlugin from './plugins/db';
+import redisPlugin from './plugins/redis';
+import authPlugin from './plugins/auth';
 
 dotenv.config({
     path: path.resolve(".env")
@@ -23,6 +27,12 @@ const dbHost: string = process.env.DB_HOST
 const dbPort: any = process.env.DB_PORT
 const dbUsername: string = process.env.DB_USERNAME
 const dbPassword: string = process.env.DB_PASSWORD
+
+const secretKey: string = process.env.SECRET;
+const expireToken = process.env.EXPIRE_TOKEN;
+
+const redisPort: any = process.env.REDIS_PORT;
+const redistHost: string = process.env.REDIS_HOST
 
 const apmUrl: string = process.env.APM_URL;
 
@@ -50,36 +60,13 @@ export const createServer = () => new Promise((resolve, reject) => {
     // register plugin below:
     server.register(fastifyBlipp)
 
-    // swagger / open api
-    server.register(fastifySwagger, {
-        routePrefix: '/swagger',
-        swagger: {
-            info: {
-                title: 'API Documentation',
-                description: 'API Documentation',
-                version: '0.1.0'
-            },
-            securityDefinitions: {
-                APIKeyHeader: {
-                    type: 'apiKey',
-                    name: 'Authorization',
-                    description: "value: Bearer <Token>",
-                    in: 'header'
-                }
-            },
-            schemes: ['http', 'https'],
-            consumes: ['application/json'],
-            produces: ['application/json'],
-            security: [
-                {
-                    APIKeyHeader: []
-                }
-            ]
-        },
-        hideUntagged: true,
-        exposeRoute: true
-    })
+    // decorators
+    server.decorate('conf', { port, secretKey, expireToken, redisPort, redistHost, apmUrl, dbDialect, db, dbHost, dbPort, dbUsername, dbPassword })
+    // apm
+    server.decorate('apm', apmServer)
 
+    // swagger / open api
+    server.register(fastifySwagger, swagger.options)
     // auto register all routes
     server.register(AutoLoad, {
         dir: path.join(__dirname, "modules/routes")
@@ -91,14 +78,10 @@ export const createServer = () => new Promise((resolve, reject) => {
         }
     });
 
-    // decorators
-    server.decorate('conf', { port, dbDialect, db, dbHost, dbPort, dbUsername, dbPassword })
-    // apm
-    server.decorate('apm', apmServer)
-
-
     // plugin 
     server.register(dbPlugin)
+    server.register(redisPlugin)
+    server.register(authPlugin);
 
 
     //-----------------------------------------------------
