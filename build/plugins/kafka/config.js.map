@@ -1,0 +1,1 @@
+{"version":3,"file":"config.js","sourceRoot":"","sources":["../../../src/plugins/kafka/config.ts"],"names":[],"mappings":";;;AAEA,MAAM,WAAW,GAAG,CAAC,MAAM,EAAsB,EAAE,CAAC,CAAC;IACjD,SAAS,EAAE,MAAM,CAAC,IAAI,CAAC,SAAS;IAChC,WAAW,EAAE,IAAI;IACjB,eAAe,EAAE,IAAI;CACxB,CAAC,CAAC;AAGC,kCAAW"}

@@ -133,7 +133,16 @@ export const GetOrderList = {
                 },
                 totalData: { type: 'string' },
             }
-        }
+        },
+        400: {
+            description: 'error response',
+            type: 'object',
+            properties: {
+              success: { type: 'string' },
+              message: { type: 'string' },
+              error: { type: 'string' },
+            }
+          }
     }
 };
 

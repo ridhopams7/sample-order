@@ -2,6 +2,7 @@ import { fastify } from "fastify";
 import fastifyBlipp from "fastify-blipp";
 import fastifySwagger from "fastify-swagger";
 import AutoLoad from "fastify-autoload";
+import fastifyJwt from "fastify-jwt";
 
 import apmServer from 'elastic-apm-node';
 
@@ -65,6 +66,8 @@ export const createServer = () => new Promise((resolve, reject) => {
     // apm
     server.decorate('apm', apmServer)
 
+    // jwt
+    server.register(fastifyJwt, { secret: secretKey })
     // swagger / open api
     server.register(fastifySwagger, swagger.options)
     // auto register all routes

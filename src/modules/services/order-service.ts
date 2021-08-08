@@ -1,7 +1,7 @@
 import { OrdersFactory, OrderDetailsFactory } from '../../plugins/db/models';
 import Sequelize, { Op } from 'sequelize';
-// import { buildQueryOption } from 'utils/query-options';
 import { buildQueryOption } from '../../utils/query-options';
+import { OrderDetailsInputAttributes } from '../../interface/order';
 
 export class OrderService {
 
@@ -16,54 +16,54 @@ export class OrderService {
 
     }
 
-    insertOrderDetail = async (param) => {
+    insertOrderDetail = (param: OrderDetailsInputAttributes) => new Promise((resolve, reject) => {
         const { orderId, productId, category, price, quantity } = param;
         const totalPrice = quantity * price;
 
-        await this.orderDetailsModel.create({ orderId, productId, category, price, quantity, totalPrice, createdBy: 'test', createdDate: Date.now() })
+        this.orderDetailsModel.create({ orderId, productId, category, price, quantity, totalPrice, createdBy: 'test', createdDate: Date.now() })
             .then(data => {
-                return (data);
+                resolve(data);
             }).catch(err => {
-                throw err
+                reject(err);
             });
-    };
+    });
 
-    getUniqueId = async (param) => {
+    getUniqueId = () => new Promise((resolve, reject) => {
         let target = "";
-        await this.db.query("SELECT NEXT VALUE FOR SEQ_ORDER_NUMBER AS SEQ_ORDER_NUM", {
+        this.db.query("SELECT NEXT VALUE FOR SEQ_ORDER_NUMBER AS SEQ_ORDER_NUM", {
             type: Sequelize.QueryTypes.SELECT
         }).then((data) => {
             data.map(row => target = row.SEQ_ORDER_NUM);
-            return target;
+            resolve(target);
         }).catch(err => {
-            throw err;
+            reject(err);
         });
-    };
+    });
 
-    inputOrder = async (parameter) => {
+    inputOrder = (parameter: Object) => new Promise((resolve, reject) => {
         let inputOrderNo = "", insertId;
 
         try {
-            await this.getUniqueId({}).then((data: any) => {
+            this.getUniqueId().then((data: number) => {
                 inputOrderNo = data.toString().padStart(8, 'OR000000')
                 insertId = data;
                 this.insertOrder({ parameter, inputOrderNo, insertId }).then(data => {
-                    return data;
+                    resolve(data);
                 });
             });
 
         } catch (error) {
-            throw error;
+            reject(error);
         }
-    };
+    });
 
-    insertOrder = async (param) => {
+    insertOrder = (param: any) => new Promise((resolve, reject) => {
         const { parameter, inputOrderNo, insertId } = param;
         const { request } = parameter;
         const { paymentType, status, orderDetail } = request;
         let resultOrderDetail = [];
         let productId = 0, category = "", price = 0, quantity = 0;
-        await this.ordersModel.create({ orderNo: inputOrderNo, status: status, paymentType: paymentType, createdDate: Date.now(), createdBy: 'test' })
+        this.ordersModel.create({ orderNo: inputOrderNo, status: status, paymentType: paymentType, createdDate: Date.now(), createdBy: 'test' })
             .then(data => {
                 for (let i = 0; i < orderDetail.length; i++) {
                     productId = orderDetail[i].productId;
@@ -79,60 +79,60 @@ export class OrderService {
                     status: data.status,
                     orderDetail: resultOrderDetail
                 };
-                return validateResult;
+                resolve(validateResult);
             }).catch(err => {
-                throw err;
+                reject(err);
             });
-    };
+    });
 
-    updateOrderStatus = async (param) => {
+    updateOrderStatus = (param) => new Promise((resolve, reject) => {
         const { orderNo, status } = param;
         const transactionStatusUpper = status.toUpperCase();
 
         switch (transactionStatusUpper) {
             case "COMPLETED":
             case "CANCELLED":
-                await this.ordersModel.update({ status: transactionStatusUpper, lastUpdatedDate: Date.now(), lastUpdatedBy: 'test1' }, {
+                this.ordersModel.update({ status: transactionStatusUpper, lastUpdatedDate: Date.now(), lastUpdatedBy: 'test1' }, {
                     where: {
                         orderNo: orderNo
                     }
                 }).catch(err => console.log(err))
                 break;
             default:
-                throw 'Wrong status';
+                reject('Wrong status');
         }
-    };
+    });
 
-    updateOrderDetail = async (param) => {
+    updateOrderDetail = (param) => new Promise((resolve, reject) => {
         const { request } = param;
         const { orderNo, status } = request;
         // console.log(request)
         if (orderNo != "") {
             try {
-                await this.updateOrderStatus({ orderNo, status })
+                this.updateOrderStatus({ orderNo, status })
                     .catch(err => {
-                        throw err;
+                        reject(err);
                     })
-                await this.responseUpdateUpdateDetail(param).then(data => {
-                    return data;
+                this.responseUpdateUpdateDetail(param).then(data => {
+                    resolve(data);
                 }).catch(err => {
-                    throw err;
+                    reject(err);
                 })
             } catch (error) {
-                throw error;
+                reject(error);
             }
         } else {
-            throw "Transaction Code null."
+            reject("Transaction Code null.")
         }
-    };
+    });
 
-    responseUpdateUpdateDetail = async (param) => {
+    responseUpdateUpdateDetail = (param) => new Promise((resolve, reject) => {
         const { request } = param;
         const { orderNo, status } = request;
         let resultProductDetail = [];
         this.ordersModel.hasMany(this.orderDetailsModel, { foreignKey: 'orderId' });
         this.orderDetailsModel.belongsTo(this.ordersModel, { foreignKey: 'orderId' });
-        await this.orderDetailsModel.findAll({
+        this.orderDetailsModel.findAll({
             include: [{ model: this.ordersModel, where: { orderNo: orderNo } }],
         })
             .then(data => {
@@ -154,14 +154,16 @@ export class OrderService {
                     orderDetail: resultProductDetail
                 };
 
-                return validateResult;
+                console.log(orderNo)
+
+                resolve(validateResult);
             }).catch(err => {
-                throw err;
+                reject(err);
             });
-    };
+    });
 
 
-    getOrderList = async (param) => {
+    getOrderList = (param) => new Promise((resolve, reject) => {
         const { request } = param;
         const { keyword, status } = request
         const options = buildQueryOption(request)
@@ -182,47 +184,58 @@ export class OrderService {
             }
         }
 
-        await this.ordersModel.findAndCountAll(options).then((data) => {
-            return ({
+        this.ordersModel.findAndCountAll(options).then((data) => {
+            resolve({
                 totalData: data.rows.length, data: data.rows
             });
         }).catch((err) => {
-            throw err;
+            reject(err);
         });
-    }
 
 
-    deleteOrder = async (param) => {
+    }).catch(err => {
+        console.log(err);
+    });
+
+    deleteOrder = (param) => new Promise((resolve, reject) => {
         const { request } = param;
         const { ordeNumber } = request;
 
-        await this.ordersModel.findOne({
+        console.log(request)
+        this.ordersModel.findOne({
             where: {
                 orderNo: ordeNumber
             }
-        }).then(async (order: any) => {
+        }).then((order: any) => {
+            console.log(order)
             if (order) {
-                await this.orderDetailsModel.destroy({
+                this.orderDetailsModel.destroy({
                     where: {
                         orderId: order.id
                     }
-                }).then(async () => {
-                    await this.ordersModel.destroy({
+                }).then(() => {
+                    this.ordersModel.destroy({
                         where: {
                             orderNo: ordeNumber
                         }
                     }).then(() => {
-                        return 'success deleted';
+                        resolve('success deleted');
                     })
 
                 }).catch((err) => {
-                    throw err;
+                    reject(err);
                 });
             } else {
-                throw 'order number not found';
+                reject('order number not found');
             }
         })
-    }
+
+
+
+
+    }).catch(err => {
+        console.log(err);
+    });
 
 }
 

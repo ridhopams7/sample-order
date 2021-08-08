@@ -1,7 +1,8 @@
 import fp from 'fastify-plugin';
-import Sequelize from 'sequelize'
 import { OrderTO, UpdateOrder, GetOrderList, DeleteOrder } from './schema';
 import { OrderService } from '../../services/order-service';
+import { sendApmError } from '../../../utils';
+
 
 
 export default fp((server, opts, next) => {
@@ -21,6 +22,7 @@ export default fp((server, opts, next) => {
                         data,
                     });
                 }).catch(err => {
+                    sendApmError(server, request, err)
                     return reply.code(400).send({
                         success: false,
                         message: 'Error in insert new record',
@@ -30,7 +32,7 @@ export default fp((server, opts, next) => {
 
 
         } catch (error) {
-
+            sendApmError(server, request, error)
             request.log.error(error);
             return reply.send(400);
         }
@@ -47,7 +49,7 @@ export default fp((server, opts, next) => {
                     result: data
                 });
             }).catch(err => {
-
+                sendApmError(server, request, err)
                 return reply.code(400).send({
                     success: false,
                     message: 'Error showing transaction list',
@@ -57,7 +59,7 @@ export default fp((server, opts, next) => {
             });
 
         } catch (error) {
-
+            sendApmError(server, request, error)
             request.log.error(error);
             return reply.send(400);
         }
@@ -76,7 +78,7 @@ export default fp((server, opts, next) => {
                 });
 
             }).catch(err => {
-
+                sendApmError(server, request, err)
                 return reply.code(400).send({
                     success: false,
                     message: 'Error showing transaction list',
@@ -86,7 +88,7 @@ export default fp((server, opts, next) => {
             });
 
         } catch (error) {
-
+            sendApmError(server, request, error)
             request.log.error(error);
             return reply.send(400);
         }

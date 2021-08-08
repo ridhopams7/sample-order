@@ -36,6 +36,7 @@ const fastify_1 = require("fastify");
 const fastify_blipp_1 = __importDefault(require("fastify-blipp"));
 const fastify_swagger_1 = __importDefault(require("fastify-swagger"));
 const fastify_autoload_1 = __importDefault(require("fastify-autoload"));
+const fastify_jwt_1 = __importDefault(require("fastify-jwt"));
 const elastic_apm_node_1 = __importDefault(require("elastic-apm-node"));
 const config_1 = require("./config");
 const path = __importStar(require("path"));
@@ -82,6 +83,8 @@ const createServer = () => new Promise((resolve, reject) => {
     server.decorate('conf', { port, secretKey, expireToken, redisPort, redistHost, apmUrl, dbDialect, db, dbHost, dbPort, dbUsername, dbPassword });
     // apm
     server.decorate('apm', elastic_apm_node_1.default);
+    // jwt
+    server.register(fastify_jwt_1.default, { secret: secretKey });
     // swagger / open api
     server.register(fastify_swagger_1.default, config_1.swagger.options);
     // auto register all routes

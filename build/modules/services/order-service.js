@@ -18,66 +18,56 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrderService = void 0;
 const models_1 = require("../../plugins/db/models");
 const sequelize_1 = __importStar(require("sequelize"));
-// import { buildQueryOption } from 'utils/query-options';
 const query_options_1 = require("../../utils/query-options");
 class OrderService {
     constructor(db) {
-        this.insertOrderDetail = (param) => __awaiter(this, void 0, void 0, function* () {
+        this.insertOrderDetail = (param) => new Promise((resolve, reject) => {
             const { orderId, productId, category, price, quantity } = param;
             const totalPrice = quantity * price;
-            yield this.orderDetailsModel.create({ orderId, productId, category, price, quantity, totalPrice, createdBy: 'test', createdDate: Date.now() })
+            this.orderDetailsModel.create({ orderId, productId, category, price, quantity, totalPrice, createdBy: 'test', createdDate: Date.now() })
                 .then(data => {
-                return (data);
+                resolve(data);
             }).catch(err => {
-                throw err;
+                reject(err);
             });
         });
-        this.getUniqueId = (param) => __awaiter(this, void 0, void 0, function* () {
+        this.getUniqueId = () => new Promise((resolve, reject) => {
             let target = "";
-            yield this.db.query("SELECT NEXT VALUE FOR SEQ_ORDER_NUMBER AS SEQ_ORDER_NUM", {
+            this.db.query("SELECT NEXT VALUE FOR SEQ_ORDER_NUMBER AS SEQ_ORDER_NUM", {
                 type: sequelize_1.default.QueryTypes.SELECT
             }).then((data) => {
                 data.map(row => target = row.SEQ_ORDER_NUM);
-                return target;
+                resolve(target);
             }).catch(err => {
-                throw err;
+                reject(err);
             });
         });
-        this.inputOrder = (parameter) => __awaiter(this, void 0, void 0, function* () {
+        this.inputOrder = (parameter) => new Promise((resolve, reject) => {
             let inputOrderNo = "", insertId;
             try {
-                yield this.getUniqueId({}).then((data) => {
+                this.getUniqueId().then((data) => {
                     inputOrderNo = data.toString().padStart(8, 'OR000000');
                     insertId = data;
                     this.insertOrder({ parameter, inputOrderNo, insertId }).then(data => {
-                        return data;
+                        resolve(data);
                     });
                 });
             }
             catch (error) {
-                throw error;
+                reject(error);
             }
         });
-        this.insertOrder = (param) => __awaiter(this, void 0, void 0, function* () {
+        this.insertOrder = (param) => new Promise((resolve, reject) => {
             const { parameter, inputOrderNo, insertId } = param;
             const { request } = parameter;
             const { paymentType, status, orderDetail } = request;
             let resultOrderDetail = [];
             let productId = 0, category = "", price = 0, quantity = 0;
-            yield this.ordersModel.create({ orderNo: inputOrderNo, status: status, paymentType: paymentType, createdDate: Date.now(), createdBy: 'test' })
+            this.ordersModel.create({ orderNo: inputOrderNo, status: status, paymentType: paymentType, createdDate: Date.now(), createdBy: 'test' })
                 .then(data => {
                 for (let i = 0; i < orderDetail.length; i++) {
                     productId = orderDetail[i].productId;
@@ -92,58 +82,58 @@ class OrderService {
                     status: data.status,
                     orderDetail: resultOrderDetail
                 };
-                return validateResult;
+                resolve(validateResult);
             }).catch(err => {
-                throw err;
+                reject(err);
             });
         });
-        this.updateOrderStatus = (param) => __awaiter(this, void 0, void 0, function* () {
+        this.updateOrderStatus = (param) => new Promise((resolve, reject) => {
             const { orderNo, status } = param;
             const transactionStatusUpper = status.toUpperCase();
             switch (transactionStatusUpper) {
                 case "COMPLETED":
                 case "CANCELLED":
-                    yield this.ordersModel.update({ status: transactionStatusUpper, lastUpdatedDate: Date.now(), lastUpdatedBy: 'test1' }, {
+                    this.ordersModel.update({ status: transactionStatusUpper, lastUpdatedDate: Date.now(), lastUpdatedBy: 'test1' }, {
                         where: {
                             orderNo: orderNo
                         }
                     }).catch(err => console.log(err));
                     break;
                 default:
-                    throw 'Wrong status';
+                    reject('Wrong status');
             }
         });
-        this.updateOrderDetail = (param) => __awaiter(this, void 0, void 0, function* () {
+        this.updateOrderDetail = (param) => new Promise((resolve, reject) => {
             const { request } = param;
             const { orderNo, status } = request;
             // console.log(request)
             if (orderNo != "") {
                 try {
-                    yield this.updateOrderStatus({ orderNo, status })
+                    this.updateOrderStatus({ orderNo, status })
                         .catch(err => {
-                        throw err;
+                        reject(err);
                     });
-                    yield this.responseUpdateUpdateDetail(param).then(data => {
-                        return data;
+                    this.responseUpdateUpdateDetail(param).then(data => {
+                        resolve(data);
                     }).catch(err => {
-                        throw err;
+                        reject(err);
                     });
                 }
                 catch (error) {
-                    throw error;
+                    reject(error);
                 }
             }
             else {
-                throw "Transaction Code null.";
+                reject("Transaction Code null.");
             }
         });
-        this.responseUpdateUpdateDetail = (param) => __awaiter(this, void 0, void 0, function* () {
+        this.responseUpdateUpdateDetail = (param) => new Promise((resolve, reject) => {
             const { request } = param;
             const { orderNo, status } = request;
             let resultProductDetail = [];
             this.ordersModel.hasMany(this.orderDetailsModel, { foreignKey: 'orderId' });
             this.orderDetailsModel.belongsTo(this.ordersModel, { foreignKey: 'orderId' });
-            yield this.orderDetailsModel.findAll({
+            this.orderDetailsModel.findAll({
                 include: [{ model: this.ordersModel, where: { orderNo: orderNo } }],
             })
                 .then(data => {
@@ -164,12 +154,13 @@ class OrderService {
                     status: data[0].order.status,
                     orderDetail: resultProductDetail
                 };
-                return validateResult;
+                console.log(orderNo);
+                resolve(validateResult);
             }).catch(err => {
-                throw err;
+                reject(err);
             });
         });
-        this.getOrderList = (param) => __awaiter(this, void 0, void 0, function* () {
+        this.getOrderList = (param) => new Promise((resolve, reject) => {
             const { request } = param;
             const { keyword, status } = request;
             const options = query_options_1.buildQueryOption(request);
@@ -184,43 +175,49 @@ class OrderService {
             if (status) {
                 options["where"] = Object.assign(Object.assign({}, options["where"]), { status: { [sequelize_1.Op.like]: `%${status}%` } });
             }
-            yield this.ordersModel.findAndCountAll(options).then((data) => {
-                return ({
+            this.ordersModel.findAndCountAll(options).then((data) => {
+                resolve({
                     totalData: data.rows.length, data: data.rows
                 });
             }).catch((err) => {
-                throw err;
+                reject(err);
             });
+        }).catch(err => {
+            console.log(err);
         });
-        this.deleteOrder = (param) => __awaiter(this, void 0, void 0, function* () {
+        this.deleteOrder = (param) => new Promise((resolve, reject) => {
             const { request } = param;
             const { ordeNumber } = request;
-            yield this.ordersModel.findOne({
+            console.log(request);
+            this.ordersModel.findOne({
                 where: {
                     orderNo: ordeNumber
                 }
-            }).then((order) => __awaiter(this, void 0, void 0, function* () {
+            }).then((order) => {
+                console.log(order);
                 if (order) {
-                    yield this.orderDetailsModel.destroy({
+                    this.orderDetailsModel.destroy({
                         where: {
                             orderId: order.id
                         }
-                    }).then(() => __awaiter(this, void 0, void 0, function* () {
-                        yield this.ordersModel.destroy({
+                    }).then(() => {
+                        this.ordersModel.destroy({
                             where: {
                                 orderNo: ordeNumber
                             }
                         }).then(() => {
-                            return 'success deleted';
+                            resolve('success deleted');
                         });
-                    })).catch((err) => {
-                        throw err;
+                    }).catch((err) => {
+                        reject(err);
                     });
                 }
                 else {
-                    throw 'order number not found';
+                    reject('order number not found');
                 }
-            }));
+            });
+        }).catch(err => {
+            console.log(err);
         });
         this.db = db;
         this.orderDetailsModel = models_1.OrderDetailsFactory(this.db);

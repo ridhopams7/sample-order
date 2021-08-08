@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fastify_plugin_1 = __importDefault(require("fastify-plugin"));
 const schema_1 = require("./schema");
 const order_service_1 = require("../../services/order-service");
+const utils_1 = require("../../../utils");
 exports.default = fastify_plugin_1.default((server, opts, next) => {
     server.post("/order/insert", { schema: schema_1.OrderTO }, (request, reply) => {
         try {
@@ -21,6 +22,7 @@ exports.default = fastify_plugin_1.default((server, opts, next) => {
                     data,
                 });
             }).catch(err => {
+                utils_1.sendApmError(server, request, err);
                 return reply.code(400).send({
                     success: false,
                     message: 'Error in insert new record',
@@ -29,6 +31,7 @@ exports.default = fastify_plugin_1.default((server, opts, next) => {
             });
         }
         catch (error) {
+            utils_1.sendApmError(server, request, error);
             request.log.error(error);
             return reply.send(400);
         }
@@ -43,6 +46,7 @@ exports.default = fastify_plugin_1.default((server, opts, next) => {
                     result: data
                 });
             }).catch(err => {
+                utils_1.sendApmError(server, request, err);
                 return reply.code(400).send({
                     success: false,
                     message: 'Error showing transaction list',
@@ -52,6 +56,7 @@ exports.default = fastify_plugin_1.default((server, opts, next) => {
             });
         }
         catch (error) {
+            utils_1.sendApmError(server, request, error);
             request.log.error(error);
             return reply.send(400);
         }
@@ -68,6 +73,7 @@ exports.default = fastify_plugin_1.default((server, opts, next) => {
                     totalData: result.totalData,
                 });
             }).catch(err => {
+                utils_1.sendApmError(server, request, err);
                 return reply.code(400).send({
                     success: false,
                     message: 'Error showing transaction list',
@@ -77,6 +83,7 @@ exports.default = fastify_plugin_1.default((server, opts, next) => {
             });
         }
         catch (error) {
+            utils_1.sendApmError(server, request, error);
             request.log.error(error);
             return reply.send(400);
         }
