@@ -14,6 +14,13 @@ server_1.createServer()
             server.log.info('Redis Connection has been established successfully.');
         }
     });
+    // running kafka monitor
+    server.kafkaClient.on('ready', () => {
+        server.log.info('Kafka Client Connection has been established successfully.');
+    });
+    server.kafkaClient.on('error', (err) => {
+        server.log.info('Server not connected to Kafka');
+    });
     const apmServerStatus = server.apm.isStarted();
     if (apmServerStatus) {
         server.log.info('Server connected to APM Server');

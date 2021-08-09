@@ -13,6 +13,7 @@ import * as dotenv from "dotenv";
 
 import dbPlugin from './plugins/db';
 import redisPlugin from './plugins/redis';
+import kafkaPlugin from './plugins/kafka';
 import authPlugin from './plugins/auth';
 
 dotenv.config({
@@ -34,6 +35,8 @@ const expireToken = process.env.EXPIRE_TOKEN;
 
 const redisPort: any = process.env.REDIS_PORT;
 const redistHost: string = process.env.REDIS_HOST
+
+const kafkaHost: string = process.env.KAFKA_HOST
 
 const apmUrl: string = process.env.APM_URL;
 
@@ -62,7 +65,7 @@ export const createServer = () => new Promise((resolve, reject) => {
     server.register(fastifyBlipp)
 
     // decorators
-    server.decorate('conf', { port, secretKey, expireToken, redisPort, redistHost, apmUrl, dbDialect, db, dbHost, dbPort, dbUsername, dbPassword })
+    server.decorate('conf', { port, secretKey, expireToken, redisPort, redistHost, apmUrl, dbDialect, db, dbHost, dbPort, dbUsername, dbPassword, kafkaHost })
     // apm
     server.decorate('apm', apmServer)
 
@@ -85,6 +88,7 @@ export const createServer = () => new Promise((resolve, reject) => {
     server.register(dbPlugin)
     server.register(redisPlugin)
     server.register(authPlugin);
+    server.register(kafkaPlugin);
 
 
     //-----------------------------------------------------

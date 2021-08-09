@@ -43,6 +43,7 @@ const path = __importStar(require("path"));
 const dotenv = __importStar(require("dotenv"));
 const db_1 = __importDefault(require("./plugins/db"));
 const redis_1 = __importDefault(require("./plugins/redis"));
+const kafka_1 = __importDefault(require("./plugins/kafka"));
 const auth_1 = __importDefault(require("./plugins/auth"));
 dotenv.config({
     path: path.resolve(".env")
@@ -59,6 +60,7 @@ const secretKey = process.env.SECRET;
 const expireToken = process.env.EXPIRE_TOKEN;
 const redisPort = process.env.REDIS_PORT;
 const redistHost = process.env.REDIS_HOST;
+const kafkaHost = process.env.KAFKA_HOST;
 const apmUrl = process.env.APM_URL;
 var apm = elastic_apm_node_1.default.start({
     // Override service name from package.json
@@ -80,7 +82,7 @@ const createServer = () => new Promise((resolve, reject) => {
     // register plugin below:
     server.register(fastify_blipp_1.default);
     // decorators
-    server.decorate('conf', { port, secretKey, expireToken, redisPort, redistHost, apmUrl, dbDialect, db, dbHost, dbPort, dbUsername, dbPassword });
+    server.decorate('conf', { port, secretKey, expireToken, redisPort, redistHost, apmUrl, dbDialect, db, dbHost, dbPort, dbUsername, dbPassword, kafkaHost });
     // apm
     server.decorate('apm', elastic_apm_node_1.default);
     // jwt
@@ -100,6 +102,7 @@ const createServer = () => new Promise((resolve, reject) => {
     server.register(db_1.default);
     server.register(redis_1.default);
     server.register(auth_1.default);
+    server.register(kafka_1.default);
     //-----------------------------------------------------
     server.addHook('onRequest', (request, reply, error) => __awaiter(void 0, void 0, void 0, function* () {
         apm.setTransactionName(request.method + ' ' + request.url);
